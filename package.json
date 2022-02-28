@@ -1,0 +1,37 @@
+{
+  "name": "cryptonomicon",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 5050",
+    "lint": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "description": "cryptonomicon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rodionbgd/cryptonomicon.git"
+  },
+  "keywords": [
+    "crypto",
+    "vue3"
+  ],
+  "author": "Rodion",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rodionbgd/cryptonomicon/issues"
+  },
+  "homepage": "https://github.com/rodionbgd/cryptonomicon#readme",
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.1.0",
+    "@vitejs/plugin-vue": "^2.2.2",
+    "@vue/eslint-config-prettier": "^7.0.0",
+    "eslint": "^8.5.0",
+    "eslint-plugin-vue": "^8.2.0",
+    "prettier": "^2.5.1",
+    "vite": "^2.8.4"
+  },
+  "dependencies": {
+    "vue": "^3.2.31"
+  }
+}
