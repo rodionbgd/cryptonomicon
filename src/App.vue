@@ -19,10 +19,11 @@
               />
             </div>
             <div
+              v-if="ticker"
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
-                v-for="t of oftenTickers"
+                v-for="t of autocompleteTicker()"
                 :key="t"
                 @click="
                   ticker = t;
@@ -33,9 +34,9 @@
                 {{ t }}
               </span>
             </div>
-            <!--            <div v-if="!isOld()">-->
-            <!--              <div class="text-sm text-red-600">Такой тикер уже добавлен</div>-->
-            <!--            </div>-->
+            <div v-if="isOld()">
+              <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+            </div>
           </div>
         </div>
         <button
@@ -43,7 +44,6 @@
           type="button"
           class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
-          <!-- Heroicon name: solid/mail -->
           <svg
             class="-ml-0.5 mr-2 h-6 w-6"
             xmlns="http://www.w3.org/2000/svg"
@@ -145,45 +145,76 @@
 export default {
   data() {
     return {
-      oftenTickers: ["BTC", "DOGE", "BCH", "CHD"],
+      oftenTickers: ["BTC", "BTM", "BTH", "BTD", "BTHN", "DOGE", "BCH", "CHD"],
       ticker: null,
       sel: null,
       tickers: [],
       graph: [],
+      notMounted: true,
     };
   },
+
   methods: {
     add() {
-      if (!this.ticker || this.isOld()) {
+      if (this.isOld()) {
+        return;
+      }
+      if (!this.ticker) {
         this.ticker = "";
         return;
       }
-      const currentTicker = {
-        name: this.ticker,
-        price: "-",
-      };
-      this.tickers.push(currentTicker);
 
-      setInterval(() => {
+      const currentTicker = {
+        name: this.ticker.toUpperCase(),
+        price: "-",
+        intervalId: null,
+      };
+
+      currentTicker.intervalId = setInterval(() => {
         const price = (Math.random() * 100).toFixed();
         this.tickers.find((t) => t.name === currentTicker.name).price = price;
         if (this.sel?.name === currentTicker.name) {
           this.graph.push(price);
         }
       }, 1000);
+      this.tickers.push(currentTicker);
       this.ticker = "";
     },
+
     remove(t) {
-      this.tickers = this.tickers.filter((ticker) => ticker !== t);
+      this.tickers = this.tickers.filter((ticker) => {
+        if (ticker === t) {
+          clearInterval(ticker.intervalId);
+          ticker.intervalId = null;
+          this.sel = null;
+        }
+        return ticker !== t;
+      });
     },
+
+    autocompleteTicker() {
+      return this.oftenTickers
+        ?.filter(
+          (t) => t.toLowerCase().indexOf(this.ticker?.toLowerCase()) !== -1
+        )
+        .slice(0, 4);
+    },
+
     isOld() {
-      return this.tickers?.find((t) => t.name === this.ticker);
+      return this.tickers?.filter(
+        (t) => t.name.toLowerCase() === this.ticker.toLowerCase()
+      ).length;
     },
+
     normalizedGraph() {
       const maxVal = Math.max(...this.graph);
-      const minVal = Math.min(...this.graph);
+      let minVal = Math.min(...this.graph);
+      if (maxVal === minVal) {
+        minVal = 0;
+      }
       return this.graph.map((g) => 5 + ((g - minVal) * 95) / (maxVal - minVal));
     },
+
     select(ticker) {
       this.sel = ticker;
       this.graph = [];
