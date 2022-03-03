@@ -1,18 +1,15 @@
-name: Deploy to Github Pages
+name: Build and Deploy Vue Application to Github Pages
 on: push
 
 jobs:
-    gh-pages-deploy:
-      name: Deploying to Github Pages
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - uses: actions/setup-node@v2
-          with:
-            node-version: '12'
-        - name: Install packages
-          run: npm i
-        - name: Set Creds
-          run: git config user.name "rodionbgd" && git config user.email "rodionbgd@mail.ru"
-        - name: Deploy
-          run: npm run build
+  build_deploy_vue:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Vue
+    steps:
+      - uses: actions/checkout@v2
+      - id: Build-Deploy-Vue
+        uses: thefrustrateddev/vue-deploy-github-pages@v1.0.0
+        with:
+          username: '{{rodionbgd}}'
+          reponame: '{{cryptonomicon}}'
+          token: ${{ secrets.GITHUB_TOKEN }}
