@@ -10,6 +10,6 @@ jobs:
       - id: Build-Deploy-Vue
         uses: thefrustrateddev/vue-deploy-github-pages@v1.0.0
         with:
-          username: '{{rodionbgd}}'
-          reponame: '{{cryptonomicon}}'
+          username: 'rodionbgd'
+          reponame: 'cryptonomicon'
           token: ${{ secrets.GITHUB_TOKEN }}
