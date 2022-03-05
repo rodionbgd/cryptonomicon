@@ -4,9 +4,10 @@
   "description": "cryptonomicon",
   "author": "Rodion",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build --mode production",
     "lint": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
-    "dev": "vite",
+    "dev": "vite build --mode development",
+    "serve": "vite",
     "preview": "vite preview --port 5050"
   },
   "dependencies": {
