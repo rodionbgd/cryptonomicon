@@ -171,7 +171,7 @@
 export default {
   data() {
     return {
-      oftenTickers: ["BTC", "BTM", "BTH", "BTD", "BTHN", "DOGE", "BCH", "CHD"],
+      oftenTickers: [],
       autocompleteTicker: [],
       ticker: null,
       sel: null,
@@ -191,7 +191,7 @@ export default {
     },
   },
 
-  created() {
+  async created() {
     const tickers = localStorage.getItem("cryptonomicon");
     if (tickers) {
       this.tickers = JSON.parse(tickers);
@@ -199,6 +199,13 @@ export default {
         this.updateTicker(ticker);
       });
     }
+    const response = await fetch(
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+    );
+    const data = await response.json();
+    this.oftenTickers = Object.values(data.Data)?.map(
+      (ticker) => ticker.Symbol
+    );
   },
 
   watch: {
@@ -229,13 +236,21 @@ export default {
     },
 
     updateTicker(currentTicker) {
-      currentTicker.intervalId = setInterval(() => {
-        const price = (Math.random() * 100).toFixed();
-        this.tickers.find((t) => t.name === currentTicker.name).price = price;
+      currentTicker.intervalId = setInterval(async () => {
+        const response = await fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=d0690cd38c2b128758385513f18ad8ee5045266d889b6aebc6430bdcff48c177`
+        );
+        if (response.status !== 200) {
+          return;
+        }
+        const data = await response.json();
+        const price = data.USD;
+        this.tickers.find((t) => t.name === currentTicker.name).price =
+          price > 1 ? price.toFixed(2) : price.toPrecision(2);
         if (this.sel?.name === currentTicker.name) {
           this.graph.push(price);
         }
-      }, 1000);
+      }, 2000);
     },
 
     remove(t) {
