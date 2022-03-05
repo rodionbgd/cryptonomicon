@@ -9,13 +9,13 @@
             >
             <div class="mt-1 relative rounded-md shadow-md">
               <input
+                id="wallet"
                 v-model="ticker"
-                @keydown.enter="add"
                 type="text"
                 name="wallet"
-                id="wallet"
                 class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
-                placeholder="Например DOGE"
+                placeholder="e.g. DOGE"
+                @keydown.enter="add"
               />
             </div>
             <div
@@ -25,11 +25,11 @@
               <span
                 v-for="t of autocompleteTicker"
                 :key="t"
+                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
                 @click="
                   ticker = t;
                   add();
                 "
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
                 {{ t }}
               </span>
@@ -40,9 +40,9 @@
           </div>
         </div>
         <button
-          @click="add"
           type="button"
           class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          @click="add"
         >
           <svg
             class="-ml-0.5 mr-2 h-6 w-6"
@@ -60,14 +60,40 @@
         </button>
       </section>
       <template v-if="tickers.length">
+        <div>
+          <button
+            class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            v-if="page > 1"
+            @click="page--"
+          >
+            back
+          </button>
+          <button
+            class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            v-if="hasNextPage"
+            @click="page++"
+          >
+            next
+          </button>
+          <label for="filter" class="block text-sm font-medium text-gray-700"
+            >Фильтр</label
+          >
+          <input
+            id="filter"
+            v-model="filter"
+            type="text"
+            class="block pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
+            @keydown.enter="add"
+          />
+        </div>
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t of tickers"
+            v-for="t of filteredTickers()"
             :key="t"
-            @click="select(t)"
             :class="{ 'border-4': sel === t }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
+            @click="select(t)"
           >
             <div class="px-4 py-5 sm:p-6 text-center">
               <dt class="text-sm font-medium text-gray-500 truncate">
@@ -79,8 +105,8 @@
             </div>
             <div class="w-full border-t border-gray-200"></div>
             <button
-              @click.stop="remove(t)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
+              @click.stop="remove(t)"
             >
               <svg
                 class="h-5 w-5"
@@ -113,9 +139,9 @@
             ></div>
           </div>
           <button
-            @click="sel = null"
             type="button"
             class="absolute top-0 right-0"
+            @click="sel = null"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -151,8 +177,18 @@ export default {
       sel: null,
       tickers: [],
       graph: [],
-      notMounted: true,
+      filter: "",
+      page: 1,
+      hasNextPage: true,
     };
+  },
+
+  computed: {
+    autocompleteTicker() {
+      return this.oftenTickers
+        ?.filter((t) => t.includes(this.ticker?.toUpperCase()))
+        .slice(0, 4);
+    },
   },
 
   created() {
@@ -165,13 +201,9 @@ export default {
     }
   },
 
-  computed: {
-    autocompleteTicker() {
-      return this.oftenTickers
-        ?.filter(
-          (t) => t.toUpperCase().indexOf(this.ticker?.toUpperCase()) !== -1
-        )
-        .slice(0, 4);
+  watch: {
+    filter() {
+      this.page = 1;
     },
   },
 
@@ -216,6 +248,16 @@ export default {
         return ticker !== t;
       });
       localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
+    },
+
+    filteredTickers() {
+      const start = 6 * (this.page - 1);
+      const end = 6 * this.page;
+      const filteredTickers = this.tickers?.filter((t) =>
+        t.name?.includes(this.filter?.toUpperCase())
+      );
+      this.hasNextPage = filteredTickers.length > end;
+      return filteredTickers?.slice(start, end);
     },
 
     isOld() {
