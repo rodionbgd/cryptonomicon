@@ -11,6 +11,7 @@ module.exports = {
     "rules": {
         "vue/padding-line-between-blocks": "error",
         "vue/new-line-between-multi-line-property": "error",
+        "vue/no-dupe-keys": "off"
     },
     "env": {
         "vue/setup-compiler-macros": true

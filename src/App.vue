@@ -19,11 +19,11 @@
               />
             </div>
             <div
-              v-if="ticker"
+              v-if="ticker && autocompleteTicker.length"
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
-                v-for="t of autocompleteTicker()"
+                v-for="t of autocompleteTicker"
                 :key="t"
                 @click="
                   ticker = t;
@@ -146,12 +146,33 @@ export default {
   data() {
     return {
       oftenTickers: ["BTC", "BTM", "BTH", "BTD", "BTHN", "DOGE", "BCH", "CHD"],
+      autocompleteTicker: [],
       ticker: null,
       sel: null,
       tickers: [],
       graph: [],
       notMounted: true,
     };
+  },
+
+  created() {
+    const tickers = localStorage.getItem("cryptonomicon");
+    if (tickers) {
+      this.tickers = JSON.parse(tickers);
+      this.tickers?.forEach((ticker) => {
+        this.updateTicker(ticker);
+      });
+    }
+  },
+
+  computed: {
+    autocompleteTicker() {
+      return this.oftenTickers
+        ?.filter(
+          (t) => t.toUpperCase().indexOf(this.ticker?.toUpperCase()) !== -1
+        )
+        .slice(0, 4);
+    },
   },
 
   methods: {
@@ -169,7 +190,13 @@ export default {
         price: "-",
         intervalId: null,
       };
+      this.updateTicker(currentTicker);
+      this.tickers.push(currentTicker);
+      localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
+      this.ticker = "";
+    },
 
+    updateTicker(currentTicker) {
       currentTicker.intervalId = setInterval(() => {
         const price = (Math.random() * 100).toFixed();
         this.tickers.find((t) => t.name === currentTicker.name).price = price;
@@ -177,8 +204,6 @@ export default {
           this.graph.push(price);
         }
       }, 1000);
-      this.tickers.push(currentTicker);
-      this.ticker = "";
     },
 
     remove(t) {
@@ -190,19 +215,12 @@ export default {
         }
         return ticker !== t;
       });
-    },
-
-    autocompleteTicker() {
-      return this.oftenTickers
-        ?.filter(
-          (t) => t.toLowerCase().indexOf(this.ticker?.toLowerCase()) !== -1
-        )
-        .slice(0, 4);
+      localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
     },
 
     isOld() {
       return this.tickers?.filter(
-        (t) => t.name.toLowerCase() === this.ticker.toLowerCase()
+        (t) => t.name?.toUpperCase() === this.ticker?.toUpperCase()
       ).length;
     },
 
