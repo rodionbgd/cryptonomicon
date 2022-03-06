@@ -89,7 +89,7 @@
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t of filteredTickers()"
+            v-for="t of filterTickers()"
             :key="t"
             :class="{ 'border-4': sel === t }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
@@ -173,6 +173,7 @@ export default {
     return {
       oftenTickers: [],
       autocompleteTicker: [],
+      filteredTickers: [],
       ticker: null,
       sel: null,
       tickers: [],
@@ -212,6 +213,13 @@ export default {
     filter() {
       this.page = 1;
     },
+
+    filteredTickers() {
+      const pages = Math.ceil(this.filteredTickers?.length / 6);
+      if (this.page > pages) {
+        this.page = pages;
+      }
+    },
   },
 
   methods: {
@@ -231,6 +239,7 @@ export default {
       };
       this.updateTicker(currentTicker);
       this.tickers.push(currentTicker);
+      this.filteredTickers = [...this.tickers];
       localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
       this.ticker = "";
     },
@@ -246,7 +255,7 @@ export default {
         const data = await response.json();
         const price = data.USD;
         this.tickers.find((t) => t.name === currentTicker.name).price =
-          price > 1 ? price.toFixed(2) : price.toPrecision(2);
+          price > 1 ? price.toFixed(2) : price?.toPrecision(3) ?? "-";
         if (this.sel?.name === currentTicker.name) {
           this.graph.push(price);
         }
@@ -262,17 +271,20 @@ export default {
         }
         return ticker !== t;
       });
+      this.filteredTickers = this.filteredTickers?.filter((ticker) => {
+        return ticker !== t;
+      });
       localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
     },
 
-    filteredTickers() {
+    filterTickers() {
       const start = 6 * (this.page - 1);
       const end = 6 * this.page;
-      const filteredTickers = this.tickers?.filter((t) =>
+      this.filteredTickers = this.tickers?.filter((t) =>
         t.name?.includes(this.filter?.toUpperCase())
       );
-      this.hasNextPage = filteredTickers.length > end;
-      return filteredTickers?.slice(start, end);
+      this.hasNextPage = this.filteredTickers.length > end;
+      return this.filteredTickers?.slice(start, end);
     },
 
     isOld() {
