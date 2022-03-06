@@ -207,11 +207,34 @@ export default {
     this.oftenTickers = Object.values(data.Data)?.map(
       (ticker) => ticker.Symbol
     );
+
+    const params = Object.fromEntries(
+      new URL(window.location).searchParams.entries()
+    );
+    if (params.filter) {
+      this.filter = params.filter;
+    }
+    if (params.page) {
+      this.page = params.page;
+    }
   },
 
   watch: {
     filter() {
       this.page = 1;
+      window.history.pushState(
+        null,
+        "",
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
+    },
+
+    page() {
+      window.history.pushState(
+        null,
+        "",
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
     },
 
     filteredTickers() {
