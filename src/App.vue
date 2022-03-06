@@ -34,7 +34,7 @@
                 {{ t }}
               </span>
             </div>
-            <div v-if="isOld()">
+            <div v-if="isOld">
               <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
             </div>
           </div>
@@ -89,9 +89,9 @@
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t of filterTickers()"
+            v-for="t of paginatedTickers"
             :key="t"
-            :class="{ 'border-4': sel === t }"
+            :class="{ 'border-4': selectedTicker === t }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
             @click="select(t)"
           >
@@ -126,13 +126,13 @@
           </div>
         </dl>
         <hr class="w-full border-t border-gray-600 my-4" />
-        <section v-if="sel" class="relative">
+        <section v-if="selectedTicker" class="relative">
           <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-            {{ sel.name }} - USD
+            {{ selectedTicker.name }} - USD
           </h3>
           <div class="flex items-end border-gray-600 border-b border-l h-64">
             <div
-              v-for="(g, idx) of normalizedGraph()"
+              v-for="(g, idx) of normalizedGraph"
               :key="idx"
               :style="{ height: `${g}%` }"
               class="bg-purple-800 border w-10"
@@ -141,7 +141,7 @@
           <button
             type="button"
             class="absolute top-0 right-0"
-            @click="sel = null"
+            @click="selectedTicker = null"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -173,14 +173,12 @@ export default {
     return {
       oftenTickers: [],
       autocompleteTicker: [],
-      filteredTickers: [],
       ticker: null,
-      sel: null,
+      selectedTicker: null,
       tickers: [],
       graph: [],
       filter: "",
       page: 1,
-      hasNextPage: true,
     };
   },
 
@@ -190,124 +188,34 @@ export default {
         ?.filter((t) => t.includes(this.ticker?.toUpperCase()))
         .slice(0, 4);
     },
-  },
 
-  async created() {
-    const tickers = localStorage.getItem("cryptonomicon");
-    if (tickers) {
-      this.tickers = JSON.parse(tickers);
-      this.tickers?.forEach((ticker) => {
-        this.updateTicker(ticker);
-      });
-    }
-    const response = await fetch(
-      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
-    );
-    const data = await response.json();
-    this.oftenTickers = Object.values(data.Data)?.map(
-      (ticker) => ticker.Symbol
-    );
-
-    const params = Object.fromEntries(
-      new URL(window.location).searchParams.entries()
-    );
-    if (params.filter) {
-      this.filter = params.filter;
-    }
-    if (params.page) {
-      this.page = params.page;
-    }
-  },
-
-  watch: {
-    filter() {
-      this.page = 1;
-      window.history.pushState(
-        null,
-        "",
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
-      );
+    pageStateOptions() {
+      return {
+        filter: this.filter,
+        page: this.page,
+      };
     },
 
-    page() {
-      window.history.pushState(
-        null,
-        "",
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
-      );
+    startIndex() {
+      return 6 * (this.page - 1);
+    },
+
+    endIndex() {
+      return 6 * this.page;
+    },
+
+    hasNextPage() {
+      return this.filteredTickers?.length > this.endIndex;
     },
 
     filteredTickers() {
-      const pages = Math.ceil(this.filteredTickers?.length / 6);
-      if (this.page > pages) {
-        this.page = pages;
-      }
-    },
-  },
-
-  methods: {
-    add() {
-      if (this.isOld()) {
-        return;
-      }
-      if (!this.ticker) {
-        this.ticker = "";
-        return;
-      }
-
-      const currentTicker = {
-        name: this.ticker.toUpperCase(),
-        price: "-",
-        intervalId: null,
-      };
-      this.updateTicker(currentTicker);
-      this.tickers.push(currentTicker);
-      this.filteredTickers = [...this.tickers];
-      localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
-      this.ticker = "";
-    },
-
-    updateTicker(currentTicker) {
-      currentTicker.intervalId = setInterval(async () => {
-        const response = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=d0690cd38c2b128758385513f18ad8ee5045266d889b6aebc6430bdcff48c177`
-        );
-        if (response.status !== 200) {
-          return;
-        }
-        const data = await response.json();
-        const price = data.USD;
-        this.tickers.find((t) => t.name === currentTicker.name).price =
-          price > 1 ? price.toFixed(2) : price?.toPrecision(3) ?? "-";
-        if (this.sel?.name === currentTicker.name) {
-          this.graph.push(price);
-        }
-      }, 2000);
-    },
-
-    remove(t) {
-      this.tickers = this.tickers.filter((ticker) => {
-        if (ticker === t) {
-          clearInterval(ticker.intervalId);
-          ticker.intervalId = null;
-          this.sel = null;
-        }
-        return ticker !== t;
-      });
-      this.filteredTickers = this.filteredTickers?.filter((ticker) => {
-        return ticker !== t;
-      });
-      localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
-    },
-
-    filterTickers() {
-      const start = 6 * (this.page - 1);
-      const end = 6 * this.page;
-      this.filteredTickers = this.tickers?.filter((t) =>
+      return this.tickers?.filter((t) =>
         t.name?.includes(this.filter?.toUpperCase())
       );
-      this.hasNextPage = this.filteredTickers.length > end;
-      return this.filteredTickers?.slice(start, end);
+    },
+
+    paginatedTickers() {
+      return this.filteredTickers?.slice(this.startIndex, this.endIndex);
     },
 
     isOld() {
@@ -324,10 +232,117 @@ export default {
       }
       return this.graph.map((g) => 5 + ((g - minVal) * 95) / (maxVal - minVal));
     },
+  },
+
+  async created() {
+    const tickers = localStorage.getItem("cryptonomicon");
+    if (tickers) {
+      this.tickers = JSON.parse(tickers);
+      this.tickers?.forEach((ticker) => {
+        this.updateTicker(ticker);
+      });
+    }
+
+    const response = await fetch(
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+    );
+    const data = await response.json();
+    this.oftenTickers = Object.values(data.Data)?.map(
+      (ticker) => ticker.Symbol
+    );
+
+    const params = Object.fromEntries(
+      new URL(window.location).searchParams.entries()
+    );
+    const VALID_KEYS = ["filter", "page"];
+    VALID_KEYS.forEach((key) => {
+      if (params[key]) {
+        this[key] = params[key];
+      }
+    });
+  },
+
+  watch: {
+    tickers() {
+      localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
+    },
+
+    paginatedTickers() {
+      if (!this.paginatedTickers?.length && this.page > 1) {
+        this.page -= 1;
+      }
+    },
+
+    selectedTicker() {
+      this.graph = [];
+    },
+
+    filter() {
+      this.page = 1;
+    },
+
+    pageStateOptions(state) {
+      window.history.pushState(
+        null,
+        "",
+        `${window.location.pathname}?filter=${state.filter}&page=${state.page}`
+      );
+    },
+  },
+
+  methods: {
+    add() {
+      if (this.isOld) {
+        return;
+      }
+      if (!this.ticker) {
+        this.ticker = "";
+        return;
+      }
+
+      const currentTicker = {
+        name: this.ticker.toUpperCase(),
+        price: "-",
+        intervalId: null,
+      };
+      this.updateTicker(currentTicker);
+      this.tickers = [...this.tickers, currentTicker];
+      this.ticker = "";
+    },
+
+    updateTicker(currentTicker) {
+      currentTicker.intervalId = setInterval(async () => {
+        const response = await fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=d0690cd38c2b128758385513f18ad8ee5045266d889b6aebc6430bdcff48c177`
+        );
+        if (response.status !== 200) {
+          return;
+        }
+        const data = await response.json();
+        const price = data.USD;
+        this.tickers.find((t) => t.name === currentTicker.name).price =
+          price > 1 ? price.toFixed(2) : price?.toPrecision(3) ?? "-";
+        if (this.selectedTicker?.name === currentTicker.name) {
+          this.graph.push(price);
+        }
+      }, 2000);
+    },
+
+    remove(t) {
+      this.tickers = this.tickers.filter((ticker) => {
+        if (ticker === t) {
+          clearInterval(ticker.intervalId);
+          ticker.intervalId = null;
+        }
+        return ticker !== t;
+      });
+      if (t === this.selectedTicker) {
+        this.selectedTicker = null;
+      }
+    },
 
     select(ticker) {
-      this.sel = ticker;
-      this.graph = [];
+      this.selectedTicker = ticker;
     },
   },
 };
