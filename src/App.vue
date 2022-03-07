@@ -100,7 +100,7 @@
                 {{ t.name }} - USD
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                {{ t.price }}
+                {{ formatPrice(t.price) }}
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -168,11 +168,11 @@
 </template>
 
 <script>
+import { subscribeToTicker, unsubscribeFromTicker } from "./api";
 export default {
   data() {
     return {
       oftenTickers: [],
-      autocompleteTicker: [],
       ticker: null,
       selectedTicker: null,
       tickers: [],
@@ -235,14 +235,6 @@ export default {
   },
 
   async created() {
-    const tickers = localStorage.getItem("cryptonomicon");
-    if (tickers) {
-      this.tickers = JSON.parse(tickers);
-      this.tickers?.forEach((ticker) => {
-        this.updateTicker(ticker);
-      });
-    }
-
     const response = await fetch(
       "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
     );
@@ -260,6 +252,16 @@ export default {
         this[key] = params[key];
       }
     });
+
+    const tickers = localStorage.getItem("cryptonomicon");
+    if (tickers) {
+      this.tickers = JSON.parse(tickers);
+      this.tickers?.forEach((ticker) => {
+        subscribeToTicker(ticker.name, (price) => {
+          this.updateTicker(ticker.name, price);
+        });
+      });
+    }
   },
 
   watch: {
@@ -305,27 +307,25 @@ export default {
         price: "-",
         intervalId: null,
       };
-      this.updateTicker(currentTicker);
       this.tickers = [...this.tickers, currentTicker];
+      subscribeToTicker(currentTicker.name, (price) => {
+        this.updateTicker(currentTicker.name, price);
+      });
       this.ticker = "";
     },
 
-    updateTicker(currentTicker) {
-      currentTicker.intervalId = setInterval(async () => {
-        const response = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=d0690cd38c2b128758385513f18ad8ee5045266d889b6aebc6430bdcff48c177`
-        );
-        if (response.status !== 200) {
-          return;
-        }
-        const data = await response.json();
-        const price = data.USD;
-        this.tickers.find((t) => t.name === currentTicker.name).price =
-          price > 1 ? price.toFixed(2) : price?.toPrecision(3) ?? "-";
-        if (this.selectedTicker?.name === currentTicker.name) {
-          this.graph.push(price);
-        }
-      }, 2000);
+    formatPrice(price) {
+      if (price === "-") {
+        return price;
+      }
+      return price > 1 ? price?.toFixed(2) : price?.toPrecision(3);
+    },
+
+    updateTicker(tickerName, price) {
+      this.tickers.find((t) => t.name === tickerName).price = price;
+      if (this.selectedTicker?.name === tickerName) {
+        this.graph.push(price);
+      }
     },
 
     remove(t) {
@@ -339,6 +339,7 @@ export default {
       if (t === this.selectedTicker) {
         this.selectedTicker = null;
       }
+      unsubscribeFromTicker(t.name);
     },
 
     select(ticker) {
