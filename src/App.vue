@@ -91,8 +91,13 @@
           <div
             v-for="t of paginatedTickers"
             :key="t"
-            :class="{ 'border-4': selectedTicker === t }"
-            class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
+            :class="[
+              t.bgColor,
+              {
+                'border-4': selectedTicker === t,
+              },
+            ]"
+            class="overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
             @click="select(t)"
           >
             <div class="px-4 py-5 sm:p-6 text-center">
@@ -168,7 +173,7 @@
 </template>
 
 <script>
-import { subscribeToTicker, unsubscribeFromTicker } from "./api";
+import { getTickerList, subscribeToTicker, unsubscribeFromTicker } from "./api";
 export default {
   data() {
     return {
@@ -235,13 +240,7 @@ export default {
   },
 
   async created() {
-    const response = await fetch(
-      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
-    );
-    const data = await response.json();
-    this.oftenTickers = Object.values(data.Data)?.map(
-      (ticker) => ticker.Symbol
-    );
+    this.oftenTickers = [...(await getTickerList())];
 
     const params = Object.fromEntries(
       new URL(window.location).searchParams.entries()
@@ -301,11 +300,15 @@ export default {
         this.ticker = "";
         return;
       }
-
+      const tickerNameUpperCase = this.ticker.toUpperCase();
+      const bgColor = this.oftenTickers.includes(tickerNameUpperCase)
+        ? "bg-white"
+        : "bg-red-100";
       const currentTicker = {
-        name: this.ticker.toUpperCase(),
+        name: tickerNameUpperCase,
         price: "-",
         intervalId: null,
+        bgColor,
       };
       this.tickers = [...this.tickers, currentTicker];
       subscribeToTicker(currentTicker.name, (price) => {
