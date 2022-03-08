@@ -135,7 +135,10 @@
           <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
             {{ selectedTicker.name }} - USD
           </h3>
-          <div class="flex items-end border-gray-600 border-b border-l h-64">
+          <div
+            class="flex items-end border-gray-600 border-b border-l h-64"
+            ref="graph"
+          >
             <div
               v-for="(g, idx) of normalizedGraph"
               :key="idx"
@@ -174,6 +177,7 @@
 
 <script>
 import { getTickerList, subscribeToTicker, unsubscribeFromTicker } from "./api";
+
 export default {
   data() {
     return {
@@ -184,6 +188,7 @@ export default {
       graph: [],
       filter: "",
       page: 1,
+      maxGraphElements: 1,
     };
   },
 
@@ -291,6 +296,14 @@ export default {
     },
   },
 
+  mounted() {
+    window.addEventListener("resize", this.calculateMaxGraphElements);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener("resize", this.calculateMaxGraphElements);
+  },
+
   methods: {
     add() {
       if (this.isOld) {
@@ -324,10 +337,20 @@ export default {
       return price > 1 ? price?.toFixed(2) : price?.toPrecision(3);
     },
 
+    calculateMaxGraphElements() {
+      this.maxGraphElements = (this.$refs.graph?.clientWidth / 38).toFixed();
+    },
+
     updateTicker(tickerName, price) {
       this.tickers.find((t) => t.name === tickerName).price = price;
       if (this.selectedTicker?.name === tickerName) {
         this.graph.push(price);
+        if (this.graph.length > this.maxGraphElements) {
+          this.graph = this.graph.slice(
+            this.graph.length - this.maxGraphElements,
+            this.graph.length
+          );
+        }
       }
     },
 
