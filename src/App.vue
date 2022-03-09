@@ -281,6 +281,7 @@ export default {
 
     selectedTicker() {
       this.graph = [];
+      this.$nextTick(this.calculateMaxGraphElements);
     },
 
     filter() {
@@ -338,7 +339,10 @@ export default {
     },
 
     calculateMaxGraphElements() {
-      this.maxGraphElements = (this.$refs.graph?.clientWidth / 38).toFixed();
+      if (!this.$refs.graph) {
+        return;
+      }
+      this.maxGraphElements = (this.$refs.graph.clientWidth / 38).toFixed();
     },
 
     updateTicker(tickerName, price) {
