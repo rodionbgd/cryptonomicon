@@ -50,17 +50,6 @@ export default {
     AddButton,
   },
 
-  data() {
-    return {
-      ticker: "",
-      disabled: true,
-    };
-  },
-
-  emits: {
-    addTicker: (payload) => typeof payload === "object" && payload.name?.length,
-  },
-
   props: {
     oftenTickers: {
       type: Array,
@@ -75,6 +64,17 @@ export default {
         return [];
       },
     },
+  },
+
+  emits: {
+    addTicker: (payload) => typeof payload === "object" && payload.name?.length,
+  },
+
+  data() {
+    return {
+      ticker: "",
+      disabled: true,
+    };
   },
 
   computed: {

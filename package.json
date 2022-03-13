@@ -5,7 +5,8 @@
   "author": "Rodion",
   "scripts": {
     "build": "vite build --mode production",
-    "lint": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "lint": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs --ignore-path .gitignore",
+    "lint:fix": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
     "dev": "vite build --mode development",
     "serve": "vite",
     "preview": "vite preview --port 5050"
@@ -26,7 +27,6 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-vue": "^8.2.0",
     "vite": "^2.8.4",
-    "vite-plugin-resolve-extension-vue": "^0.1.0",
     "vue-cli-plugin-tailwind": "~3.0.0"
   },
   "bugs": {

@@ -91,10 +91,15 @@
 
 <script>
 import { getTickerList, subscribeToTicker, unsubscribeFromTicker } from "./api";
-import AddTicker from "./component/AddTicker";
-import TheGraph from "./component/TheGraph";
+import AddTicker from "./component/AddTicker.vue";
+import TheGraph from "./component/TheGraph.vue";
 
 export default {
+  components: {
+    AddTicker,
+    TheGraph,
+  },
+
   data() {
     return {
       oftenTickers: [],
@@ -105,11 +110,6 @@ export default {
       page: 1,
       maxGraphElements: 1,
     };
-  },
-
-  components: {
-    AddTicker,
-    TheGraph,
   },
 
   computed: {
@@ -143,30 +143,6 @@ export default {
     },
   },
 
-  async created() {
-    this.oftenTickers = [...(await getTickerList())];
-
-    const params = Object.fromEntries(
-      new URL(window.location).searchParams.entries()
-    );
-    const VALID_KEYS = ["filter", "page"];
-    VALID_KEYS.forEach((key) => {
-      if (params[key]) {
-        this[key] = params[key];
-      }
-    });
-
-    const tickers = localStorage.getItem("cryptonomicon");
-    if (tickers) {
-      this.tickers = JSON.parse(tickers);
-      this.tickers?.forEach((ticker) => {
-        subscribeToTicker(ticker.name, (price) => {
-          this.updateTicker(ticker.name, price);
-        });
-      });
-    }
-  },
-
   watch: {
     tickers() {
       localStorage.setItem("cryptonomicon", JSON.stringify(this.tickers));
@@ -194,6 +170,30 @@ export default {
         `${window.location.pathname}?filter=${state.filter}&page=${state.page}`
       );
     },
+  },
+
+  async created() {
+    this.oftenTickers = [...(await getTickerList())];
+
+    const params = Object.fromEntries(
+      new URL(window.location).searchParams.entries()
+    );
+    const VALID_KEYS = ["filter", "page"];
+    VALID_KEYS.forEach((key) => {
+      if (params[key]) {
+        this[key] = params[key];
+      }
+    });
+
+    const tickers = localStorage.getItem("cryptonomicon");
+    if (tickers) {
+      this.tickers = JSON.parse(tickers);
+      this.tickers?.forEach((ticker) => {
+        subscribeToTicker(ticker.name, (price) => {
+          this.updateTicker(ticker.name, price);
+        });
+      });
+    }
   },
 
   methods: {

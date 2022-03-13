@@ -44,13 +44,6 @@
 export default {
   name: "TheGraph",
 
-  data() {
-    return {
-      maxGraphElements: 1,
-      graphWidth: 0,
-    };
-  },
-
   props: {
     selectedTicker: Object,
     graph: Array,
@@ -62,6 +55,13 @@ export default {
     updateMaxElements: null,
   },
 
+  data() {
+    return {
+      maxGraphElements: 1,
+      graphWidth: 0,
+    };
+  },
+
   computed: {
     normalizedGraph() {
       const maxVal = Math.max(...this.graph);
@@ -70,6 +70,20 @@ export default {
         minVal = 0;
       }
       return this.graph.map((g) => 5 + ((g - minVal) * 95) / (maxVal - minVal));
+    },
+  },
+
+  watch: {
+    maxGraphElements() {
+      this.$emit("updateMaxElements", this.maxGraphElements);
+    },
+
+    graph() {
+      this.calculateMaxGraphElements();
+    },
+
+    graphWidth() {
+      this.calculateMaxGraphElements();
     },
   },
 
@@ -88,20 +102,6 @@ export default {
       }
       this.graphWidth = this.$refs.graph.clientWidth;
       this.maxGraphElements = parseFloat((this.graphWidth / 38).toFixed());
-    },
-  },
-
-  watch: {
-    maxGraphElements() {
-      this.$emit("updateMaxElements", this.maxGraphElements);
-    },
-
-    graph() {
-      this.calculateMaxGraphElements();
-    },
-
-    graphWidth() {
-      this.calculateMaxGraphElements();
     },
   },
 };
