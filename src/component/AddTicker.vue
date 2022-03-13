@@ -58,8 +58,7 @@ export default {
   },
 
   emits: {
-    "add-ticker": (payload) =>
-      typeof payload === "object" && payload.name?.length,
+    addTicker: (payload) => typeof payload === "object" && payload.name?.length,
   },
 
   props: {
@@ -120,7 +119,7 @@ export default {
         intervalId: null,
         bgColor,
       };
-      this.$emit("add-ticker", ticker);
+      this.$emit("addTicker", ticker);
       this.ticker = "";
     },
   },
